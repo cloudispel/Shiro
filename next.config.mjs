@@ -69,19 +69,58 @@ let nextConfig = {
     }
   },
 
-  webpack: (config, { webpack }) => {
-    const __dirname = new URL('./', import.meta.url).pathname
-    config.resolve.alias['jotai'] = path.resolve(
-      __dirname,
-      'node_modules/jotai',
-    )
+  webpack: (config, { isServer, webpack }) => {
+    const __dirname = new URL('./', import.meta.url).pathname;
+    config.resolve.alias['jotai'] = path.resolve(__dirname, 'node_modules/jotai');
 
     config.externals.push({
       'utf-8-validate': 'commonjs utf-8-validate',
       bufferutil: 'commonjs bufferutil',
-    })
+    });
 
-    return config
+    // 添加压缩插件和代码分割优化
+    config.optimization.splitChunks = {
+      cacheGroups: {
+        defaultVendors: {
+          test: /[\\/]node_modules[\\/]/,
+          priority: -10,
+          reuseExistingChunk: true,
+          name(module) {
+            const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
+            return `npm.${packageName.replace('@', '')}`;
+          },
+        },
+        default: {
+          minChunks: 2,
+          priority: -20,
+          reuseExistingChunk: true,
+        },
+      },
+    };
+
+    if (!config.optimization.minimizer) {
+      config.optimization.minimizer = [];
+    }
+    config.optimization.minimizer.push(new webpack.TerserPlugin({
+      terserOptions: {
+        compress: {
+          comparisons: false,
+          inline: 2,
+        },
+        mangle: {
+          safari10: true,
+        },
+        output: {
+          comments: false,
+          ascii_only: true,
+        },
+        parse: {
+          ecma: 8,
+        },
+      },
+    }));
+
+    return config;
   },
 }
 
