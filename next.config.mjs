@@ -1,6 +1,7 @@
 import { execSync } from 'child_process'
 import path from 'path'
 import { config } from 'dotenv'
+import TerserPlugin from 'terser-webpack-plugin'
 
 import NextBundleAnalyzer from '@next/bundle-analyzer'
 
